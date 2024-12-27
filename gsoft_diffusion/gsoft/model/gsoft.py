@@ -20,10 +20,10 @@ class GSOFTLayer(nn.Module):
         self.n = n
         self.nblocks = nblocks
 
-        self.ort_monarch = GSOrthogonal(n, nblocks, orthogonal, method)
+        self.ort_gs = GSOrthogonal(n, nblocks, orthogonal, method)
 
     def forward(self, x: torch.Tensor):
-        x = self.ort_monarch(x)
+        x = self.ort_gs(x)
         return x
 
 
@@ -34,10 +34,10 @@ class GSOFTCrossAttnProcessor(nn.Module):
         self.hidden_size = hidden_size
         self.cross_attention_dim = cross_attention_dim
 
-        self.to_q_moft = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
-        self.to_k_moft = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
-        self.to_v_moft = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
-        self.to_out_moft = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_q_gsoft = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_k_gsoft = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
+        self.to_v_gsoft = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
+        self.to_out_gsoft = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
 
         if scale:
             self.q_scale = nn.Parameter(torch.ones(hidden_size))
@@ -53,7 +53,7 @@ class GSOFTCrossAttnProcessor(nn.Module):
         batch_size, sequence_length, _ = hidden_states.shape
         attention_mask = attn.prepare_attention_mask(attention_mask, sequence_length, batch_size)
 
-        query = self.to_q_moft(hidden_states)
+        query = self.to_q_gsoft(hidden_states)
         query = attn.to_q(query)
         if self.scale:
             query = self.q_scale * query
@@ -61,12 +61,12 @@ class GSOFTCrossAttnProcessor(nn.Module):
 
         encoder_hidden_states = encoder_hidden_states if encoder_hidden_states is not None else hidden_states
 
-        key = self.to_k_moft(encoder_hidden_states)
+        key = self.to_k_gsoft(encoder_hidden_states)
         key = attn.to_k(key)
         if self.scale:
             key = self.k_scale * key
 
-        value = self.to_v_moft(encoder_hidden_states)
+        value = self.to_v_gsoft(encoder_hidden_states)
         value = attn.to_v(value)
         if self.scale:
             value = self.v_scale * value
@@ -79,7 +79,7 @@ class GSOFTCrossAttnProcessor(nn.Module):
         hidden_states = attn.batch_to_head_dim(hidden_states)
 
         # linear proj
-        hidden_states = self.to_out_moft(hidden_states)
+        hidden_states = self.to_out_gsoft(hidden_states)
         hidden_states = F.linear(hidden_states, attn.to_out[0].weight)
         if self.scale:
             hidden_states = self.out_scale * hidden_states
@@ -98,15 +98,15 @@ class DoubleGSOFTCrossAttnProcessor(nn.Module):
         self.hidden_size = hidden_size
         self.cross_attention_dim = cross_attention_dim
 
-        self.to_q_moft_in = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
-        self.to_k_moft_in = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
-        self.to_v_moft_in = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
-        self.to_out_moft_in = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_q_gsoft_in = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_k_gsoft_in = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
+        self.to_v_gsoft_in = GSOFTLayer(cross_attention_dim or hidden_size, nblocks=nblocks, method=method)
+        self.to_out_gsoft_in = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
 
-        self.to_q_moft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
-        self.to_k_moft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
-        self.to_v_moft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
-        self.to_out_moft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_q_gsoft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_k_gsoft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_v_gsoft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
+        self.to_out_gsoft_out = GSOFTLayer(hidden_size, nblocks=nblocks, method=method)
 
         if scale:
             self.q_scale = nn.Parameter(torch.ones(hidden_size))
@@ -122,24 +122,24 @@ class DoubleGSOFTCrossAttnProcessor(nn.Module):
         batch_size, sequence_length, _ = hidden_states.shape
         attention_mask = attn.prepare_attention_mask(attention_mask, sequence_length, batch_size)
 
-        query = self.to_q_moft_in(hidden_states)
+        query = self.to_q_gsoft_in(hidden_states)
         query = attn.to_q(query)
-        query = self.to_q_moft_out(query)
+        query = self.to_q_gsoft_out(query)
         if self.scale:
             query = self.q_scale * query
         query = attn.head_to_batch_dim(query)
 
         encoder_hidden_states = encoder_hidden_states if encoder_hidden_states is not None else hidden_states
 
-        key = self.to_k_moft_in(encoder_hidden_states)
+        key = self.to_k_gsoft_in(encoder_hidden_states)
         key = attn.to_k(key)
-        key = self.to_k_moft_out(key)
+        key = self.to_k_gsoft_out(key)
         if self.scale:
             key = self.k_scale * key
 
-        value = self.to_v_moft_in(encoder_hidden_states)
+        value = self.to_v_gsoft_in(encoder_hidden_states)
         value = attn.to_v(value)
-        value = self.to_v_moft_out(value)
+        value = self.to_v_gsoft_out(value)
         if self.scale:
             value = self.v_scale * value
 
@@ -151,9 +151,9 @@ class DoubleGSOFTCrossAttnProcessor(nn.Module):
         hidden_states = attn.batch_to_head_dim(hidden_states)
 
         # linear proj
-        hidden_states = self.to_out_moft_in(hidden_states)
+        hidden_states = self.to_out_gsoft_in(hidden_states)
         hidden_states = F.linear(hidden_states, attn.to_out[0].weight)
-        hidden_states = self.to_out_moft_out(hidden_states)  # + scale * self.to_out_lora(hidden_states)
+        hidden_states = self.to_out_gsoft_out(hidden_states)  # + scale * self.to_out_lora(hidden_states)
         if self.scale:
             hidden_states = self.out_scale * hidden_states
         if attn.to_out[0].bias is not None:

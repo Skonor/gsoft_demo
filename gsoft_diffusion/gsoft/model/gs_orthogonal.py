@@ -72,12 +72,12 @@ class BlockdiagButterflyMultiply(torch.autograd.Function):
 class GSOrthogonal(nn.Module):
     def __init__(self, n: int, nblocks: int, orthogonal=True, method="cayley"):
         """
-        Monarch matrix layer
+        GS matrix layer
 
         Args:
             n: input and output number of features
             nblocks: number of blocks on diagonal in factors
-            orthogonal: flag of whether to use orthogonal monarch matrix of any orthogonal matrix
+            orthogonal: flag of whether to use orthogonal GS matrix of any orthogonal matrix
             method: method of obtaining orthogonal matrix. If "cayley" we use self.cayley_batch,
                 otherwise self.exp_full. Useful only in case orthogonal=True
         """

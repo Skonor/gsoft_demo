@@ -1,6 +1,6 @@
 # Finetuning RoBERTa-Base with GSOFT on GLUE.
 
-This directory contains files and instructions needed to reproduce experiments of fine-tuning RobBERTa model on GLUE benchmark. 
+This directory contains files and instructions needed to reproduce experiments of fine-tuning RoBERTa model on GLUE benchmark. 
 
 ## Installation
 

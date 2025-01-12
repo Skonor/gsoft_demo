@@ -1,5 +1,5 @@
 ## GSOFT Stable Diffusion fine-tuning
-This directory contains all the code for Stable Diffusion fine-tuning experiments.
+This directory contains the code for the Stable Diffusion fine-tuning experiments based on the [Diffusers Dreambooth example](https://github.com/huggingface/diffusers/tree/main/examples/dreambooth).
 
 ## Running locally with PyTorch
 ### Installing the dependencies

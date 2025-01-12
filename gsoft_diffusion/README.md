@@ -53,7 +53,7 @@ accelerate launch train.py \
 
 ### Inference
 
-Once you have trained a model using above command, the inference can be done using the following script. The 'prompts' argument should be passed as a one string of prompt devided by #.
+Once a model has been trained using the above command, inference can be performed using the following script. The 'prompts' argument should be passed as a string of prompts separated by #.
 
 ```bash
 export MODEL_NAME="stable-diffusion-2-base"
@@ -75,7 +75,7 @@ accelerate launch inference.py \
   --double_gsoft
 ```
 
-Then the result will be saved in the following structure:
+The result is then stored in the following structure:
 
 ```md
 path-to-save-inference

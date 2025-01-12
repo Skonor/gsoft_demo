@@ -3,7 +3,7 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
-from .gs_orthogonal import GSOrthogonal
+from gs_matrix_layer import GSOrthogonal
 
 
 class GSOFTLayer(nn.Module):
